@@ -16,13 +16,14 @@ NuScenes 장면의 인지 난이도 지표(DDI)가 실제 자율주행 객체 �
 | 인지 특징 추출 | 완료 | keyframe/object/scene 단위 특징표 |
 | 기존 임계값 감사 | 완료 | 포화율, 분포, 상관관계, 클래스·거리별 LiDAR 분석 |
 | prediction-GT 오류 매칭 | 완료 | perfect prediction self-test에서 FN=0, FP=0 |
-| keyframe-only trainval 확보 | 진행 중 | Google Drive 동기화 및 구조 검증 필요 |
+| trainval01 shard 검증 | 완료 | 85 scenes, 3,376 keyframes, 전체의 9.886% |
+| 전체 keyframe-only trainval 확보 | 미완료 | 나머지 9개 blob 또는 검증된 mirror 필요 |
 | 실제 인지 모델 추론 | 예정 | Camera baseline부터 실행 |
 | DDI-오류 관계 검정 | 예정 | 모델별 효과크기와 민감도 분석 |
 
 ## 1차 분석 결론
 
-Mini 분석은 현재 발표 기준을 그대로 확정 임계값으로 사용하기 어렵다는 것을 보여줍니다.
+Mini와 trainval01 shard 분석은 현재 발표 기준을 그대로 확정 임계값으로 사용하기 어렵다는 것을 보여줍니다.
 
 - 객체별 LiDAR point가 `0-4`인 annotation이 약 `53.5%`였습니다.
 - LiDAR point 수는 객체 거리와 클래스에 강하게 종속됩니다.
@@ -57,6 +58,7 @@ scripts/
   plot_perception_audit.py
   match_nuscenes_detection_errors.py    NuScenes prediction과 GT 오류 매칭
   materialize_nuscenes_keyframes.ps1    Drive 원본 로컬화·압축해제·검증
+  stream_copy_file.py                   대용량 Drive 파일 스트리밍 복사·재개
   resume_range_downloads.py             HTTP byte-range 다운로드 재개 유틸리티
 ```
 
@@ -99,14 +101,17 @@ python scripts\plot_perception_audit.py `
 
 ## Trainval 데이터 사용
 
-현재 검토 중인 package는 NuScenes 원본에서 intermediate sweeps를 제외한 비공식 keyframe-only trainval ZIP입니다.
+다운로드한 Kaggle package를 실제 파일 단위로 검증한 결과, 전체 keyframe-only trainval이 아니라 공식 `v1.0-trainval01_blobs.tgz`와 전체 metadata를 묶은 단일 shard였습니다.
 
-- 예상 압축 크기: `33,489,285,238 bytes` (`31.19 GiB`)
-- 예상 해제 크기: 약 `49 GiB`
-- 출처: Kaggle의 비공식 축약본
-- 주의: 출처, license, hash와 누락 여부를 검증하기 전에는 연구 결과에 사용하지 않습니다.
+- 압축 크기: `33,489,285,238 bytes` (`31.19 GiB`)
+- 포함 내용: 공식 trainval metadata, `trainval01` samples와 sweeps
+- 완전 keyframe: `3,376 / 34,149` (`9.886%`)
+- 완전 scene: `85 / 850` (`train 62`, `val 23`)
+- 누락 keyframe: `30,773`
 
-Google Drive 서버에서 전체 바이트 크기와 동기화 완료를 확인한 후 다음 명령으로 로컬화합니다.
+이 shard는 pilot 분석과 23개 validation scene 평가에는 사용할 수 있지만, 전체 trainval 결과로 보고하면 안 됩니다. 전체 keyframe-only 구성을 만들려면 공식 blob 10개를 모두 받은 뒤 각 archive에서 `samples`만 병합하고 `sweeps`를 제거하거나, 34,149개 keyframe 완전성을 검증할 수 있는 별도 mirror가 필요합니다.
+
+Google Drive에서 shard를 다시 로컬화할 때는 다음 명령을 사용합니다.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\materialize_nuscenes_keyframes.ps1 `
@@ -114,7 +119,7 @@ powershell -ExecutionPolicy Bypass -File scripts\materialize_nuscenes_keyframes.
   -Validate
 ```
 
-검증기는 최소한 `850 scenes`, `34,149 keyframes`, 6개 camera channel, `LIDAR_TOP`, annotation/calibration/ego pose/map 및 모든 keyframe 파일 경로를 확인합니다.
+검증기는 `850 scenes`, `34,149 keyframes`, 6개 camera channel, `LIDAR_TOP`, annotation/calibration/ego pose/map 및 모든 keyframe 파일 경로를 확인합니다. 일부 shard라면 전체 통과 대신 complete sample/scene coverage를 보고합니다.
 
 ## 모델 검증 순서
 
@@ -125,7 +130,7 @@ powershell -ExecutionPolicy Bypass -File scripts\materialize_nuscenes_keyframes.
 5. LiDAR는 `sweeps_num=0` 조건으로 재학습하거나 single-sweep checkpoint를 사용합니다.
 6. 마지막으로 Fusion 모델과 `P_fusion`을 비교합니다.
 
-Keyframe-only 데이터에는 intermediate sweeps가 없으므로 일반적인 multi-sweep PointPillars/CenterPoint 공식 성능과 직접 비교하지 않습니다.
+연구용 keyframe 구성에서는 intermediate sweeps를 사용하지 않으므로 일반적인 multi-sweep PointPillars/CenterPoint 공식 성능과 직접 비교하지 않습니다.
 
 ## 문서와 결과
 
@@ -133,8 +138,10 @@ Keyframe-only 데이터에는 intermediate sweeps가 없으므로 일반적인 m
 - [인지 연구 설계](docs/perception_research_plan.md)
 - [모델 실행 계획](docs/perception_model_execution_plan.md)
 - [임계값 근거표](docs/perception_threshold_evidence.csv)
+- [Trainval01 keyframe shard 검증 보고서](docs/trainval01_keyframe_shard_report.md)
 - [Mini 임계값 감사](results/v1.0-mini/audit/perception_threshold_audit.md)
-- [핵심 그래프](results/v1.0-mini/figures)
+- [Trainval01 shard 결과](results/trainval01-shard)
+- [Mini 핵심 그래프](results/v1.0-mini/figures)
 - [Google Drive 연구 폴더](https://drive.google.com/drive/folders/1q33citSr3VgEAPpUpRwyDbY3ck6L6LA4)
 
 ## 참고 기준

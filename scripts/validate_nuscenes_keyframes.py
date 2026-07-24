@@ -44,13 +44,18 @@ def main() -> None:
     missing_files: Counter[str] = Counter()
     zero_byte_files: Counter[str] = Counter()
     checked_bytes: Counter[str] = Counter()
+    complete_samples_by_scene: Counter[str] = Counter()
+    total_samples_by_scene: Counter[str] = Counter()
     missing_examples: list[str] = []
 
     for sample in nusc.sample:
+        total_samples_by_scene[sample["scene_token"]] += 1
+        sample_complete = True
         for channel in required_channels:
             token = sample["data"].get(channel)
             if token is None:
                 missing_channels[channel] += 1
+                sample_complete = False
                 continue
 
             sample_data = nusc.get("sample_data", token)
@@ -60,6 +65,7 @@ def main() -> None:
             path = dataroot / sample_data["filename"]
             if not path.is_file():
                 missing_files[channel] += 1
+                sample_complete = False
                 if len(missing_examples) < 100:
                     missing_examples.append(str(path))
                 continue
@@ -67,6 +73,10 @@ def main() -> None:
             checked_bytes[channel] += size
             if size == 0:
                 zero_byte_files[channel] += 1
+                sample_complete = False
+
+        if sample_complete:
+            complete_samples_by_scene[sample["scene_token"]] += 1
 
     expected_counts = {
         "v1.0-trainval": {"scenes": 850, "samples": 34149},
@@ -81,6 +91,17 @@ def main() -> None:
         key: observed_counts[key] == expected
         for key, expected in (expected_counts or {}).items()
     }
+
+    complete_sample_count = sum(complete_samples_by_scene.values())
+    available_scene_count = sum(count > 0 for count in complete_samples_by_scene.values())
+    complete_scene_count = sum(
+        complete_samples_by_scene[token] == total
+        for token, total in total_samples_by_scene.items()
+    )
+    partial_scene_count = sum(
+        0 < complete_samples_by_scene[token] < total
+        for token, total in total_samples_by_scene.items()
+    )
 
     maps_present = (dataroot / "maps").is_dir()
     passed = (
@@ -100,6 +121,14 @@ def main() -> None:
         "expected_counts": expected_counts,
         "observed_counts": observed_counts,
         "count_checks": count_checks,
+        "keyframe_coverage": {
+            "complete_samples": complete_sample_count,
+            "missing_samples": len(nusc.sample) - complete_sample_count,
+            "complete_sample_pct": round(complete_sample_count / len(nusc.sample) * 100, 3),
+            "available_scenes": available_scene_count,
+            "complete_scenes": complete_scene_count,
+            "partial_scenes": partial_scene_count,
+        },
         "maps_present": maps_present,
         "missing_channels": dict(missing_channels),
         "non_keyframe_links": dict(non_keyframe_links),

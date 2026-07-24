@@ -171,13 +171,39 @@ def perception_score(row: dict) -> float:
     return float(np.mean(valid) * 10.0) if valid else np.nan
 
 
-def extract_rows(nusc: NuScenes, include_truncation: bool) -> tuple[list[dict], list[dict]]:
+def sample_has_keyframe_files(nusc: NuScenes, sample: dict) -> bool:
+    required_channels = (
+        "CAM_FRONT",
+        "CAM_FRONT_RIGHT",
+        "CAM_BACK_RIGHT",
+        "CAM_BACK",
+        "CAM_BACK_LEFT",
+        "CAM_FRONT_LEFT",
+        "LIDAR_TOP",
+    )
+    dataroot = Path(nusc.dataroot)
+    return all(
+        channel in sample["data"]
+        and (dataroot / nusc.get("sample_data", sample["data"][channel])["filename"]).is_file()
+        for channel in required_channels
+    )
+
+
+def extract_rows(
+    nusc: NuScenes,
+    include_truncation: bool,
+    require_existing_keyframes: bool = False,
+) -> tuple[list[dict], list[dict], int]:
     scene_by_token = {scene["token"]: scene for scene in nusc.scene}
     detection_class_range = config_factory("detection_cvpr_2019").class_range
     sample_rows: list[dict] = []
     object_rows: list[dict] = []
+    skipped_missing_keyframes = 0
 
     for sample in nusc.sample:
+        if require_existing_keyframes and not sample_has_keyframe_files(nusc, sample):
+            skipped_missing_keyframes += 1
+            continue
         scene = scene_by_token[sample["scene_token"]]
         annotations = [nusc.get("sample_annotation", token) for token in sample["anns"]]
 
@@ -302,7 +328,7 @@ def extract_rows(nusc: NuScenes, include_truncation: bool) -> tuple[list[dict], 
         row["perception_difficulty_score"] = perception_score(row)
         sample_rows.append(row)
 
-    return sample_rows, object_rows
+    return sample_rows, object_rows, skipped_missing_keyframes
 
 
 def aggregate_scene_rows(sample_df: pd.DataFrame) -> pd.DataFrame:
@@ -320,13 +346,22 @@ def main() -> None:
     parser.add_argument("--version", default="v1.0-mini")
     parser.add_argument("--output-dir", default="outputs/perception")
     parser.add_argument("--skip-truncation", action="store_true", help="Skip camera projection for faster metadata-only extraction.")
+    parser.add_argument(
+        "--require-existing-keyframes",
+        action="store_true",
+        help="Process only samples whose 6 camera and LIDAR_TOP keyframe files exist.",
+    )
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     nusc = NuScenes(version=args.version, dataroot=args.dataroot, verbose=True)
-    sample_rows, object_rows = extract_rows(nusc, include_truncation=not args.skip_truncation)
+    sample_rows, object_rows, skipped_missing_keyframes = extract_rows(
+        nusc,
+        include_truncation=not args.skip_truncation,
+        require_existing_keyframes=args.require_existing_keyframes,
+    )
     sample_df = pd.DataFrame(sample_rows).sort_values("perception_difficulty_score", ascending=False)
     object_df = pd.DataFrame(object_rows)
     scene_df = aggregate_scene_rows(sample_df)
@@ -341,6 +376,7 @@ def main() -> None:
     print(f"Wrote {len(sample_df)} sample rows to {sample_path}")
     print(f"Wrote {len(object_df)} object rows to {object_path}")
     print(f"Wrote {len(scene_df)} scene rows to {scene_path}")
+    print(f"Skipped {skipped_missing_keyframes} samples with missing keyframe files")
     print("\nTop scene-level perception difficulty:")
     print(scene_df[["scene_name", "perception_difficulty_score_mean", "annotation_count_mean", "vru_count_mean", "vehicle_count_mean"]].head(10).to_string(index=False))
 

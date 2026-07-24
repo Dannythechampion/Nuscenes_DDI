@@ -1,0 +1,7 @@
+﻿method,group,count,share_pct
+fixed_0_100,Low,123,3.6433649289099526
+fixed_0_100,Medium,1995,59.093601895734594
+fixed_0_100,High,1258,37.26303317535545
+empirical_tertile,Low,1126,33.35308056872038
+empirical_tertile,Medium,1125,33.323459715639814
+empirical_tertile,High,1125,33.323459715639814

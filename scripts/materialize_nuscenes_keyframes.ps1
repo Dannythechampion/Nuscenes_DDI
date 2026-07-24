@@ -1,9 +1,9 @@
 [CmdletBinding()]
 param(
     [string]$SourceArchive = '',
-    [string]$LocalArchive = "$PSScriptRoot\..\data\downloads\nuScenes-v1.0-trainval-keyframes-kaggle.zip",
-    [string]$DataRoot = "$PSScriptRoot\..\data\nuscenes-trainval-keyframes",
-    [string]$Python = "$PSScriptRoot\..\.venv-analysis\Scripts\python.exe",
+    [string]$LocalArchive = '',
+    [string]$DataRoot = '',
+    [string]$Python = '',
     [switch]$Extract,
     [switch]$Validate
 )
@@ -12,11 +12,31 @@ $ErrorActionPreference = 'Stop'
 $ExpectedArchiveBytes = 33489285238L
 $ExpectedExtractedBytes = 55GB
 $ArchiveName = 'nuScenes-v1.0-trainval-keyframes-kaggle.zip'
+$ProjectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+
+if (-not $LocalArchive) {
+    $LocalArchive = Join-Path $ProjectRoot "data\downloads\$ArchiveName"
+}
+if (-not $DataRoot) {
+    $DataRoot = Join-Path $ProjectRoot 'data\nuscenes-trainval-keyframes'
+}
+if (-not $Python) {
+    $Python = Join-Path $ProjectRoot '.venv-analysis\Scripts\python.exe'
+}
 
 function Get-FreeBytes([string]$Path) {
     $fullPath = [System.IO.Path]::GetFullPath($Path)
     $root = [System.IO.Path]::GetPathRoot($fullPath)
     return (Get-PSDrive -Name $root.TrimEnd('\').TrimEnd(':')).Free
+}
+
+function Test-ZipReadable([string]$Path) {
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    & tar.exe -tf $Path 2>$null | Out-Null
+    $exitCode = $LASTEXITCODE
+    $ErrorActionPreference = $previousPreference
+    return $exitCode -eq 0
 }
 
 if (-not $SourceArchive) {
@@ -40,8 +60,16 @@ $localArchiveFull = [System.IO.Path]::GetFullPath($LocalArchive)
 $localArchiveDirectory = Split-Path -Parent $localArchiveFull
 New-Item -ItemType Directory -Force -Path $localArchiveDirectory | Out-Null
 
-$localIsComplete = (Test-Path -LiteralPath $localArchiveFull) -and
-    ((Get-Item -LiteralPath $localArchiveFull).Length -eq $ExpectedArchiveBytes)
+$localIsComplete = $false
+if ((Test-Path -LiteralPath $localArchiveFull) -and
+    ((Get-Item -LiteralPath $localArchiveFull).Length -eq $ExpectedArchiveBytes)) {
+    Write-Host 'Checking the existing local ZIP table...'
+    $localIsComplete = Test-ZipReadable $localArchiveFull
+    if (-not $localIsComplete) {
+        Write-Host 'Removing an unreadable local archive before retrying...'
+        [System.IO.File]::Delete($localArchiveFull)
+    }
+}
 
 $requiredBytes = if ($localIsComplete) { 0L } else { $ExpectedArchiveBytes }
 if ($Extract) {
@@ -54,12 +82,16 @@ if ($freeBytes -lt $requiredBytes) {
 }
 
 if (-not $localIsComplete) {
-    Write-Host "Materializing archive from Google Drive..."
-    $sourceDirectory = Split-Path -Parent $SourceArchive
-    $sourceName = Split-Path -Leaf $SourceArchive
-    & robocopy.exe $sourceDirectory $localArchiveDirectory $sourceName /J /Z /R:5 /W:10 /NP
-    if ($LASTEXITCODE -gt 7) {
-        throw "Robocopy failed with exit code $LASTEXITCODE."
+    if (-not (Test-Path -LiteralPath $Python -PathType Leaf)) {
+        throw "Python environment not found: $Python"
+    }
+    Write-Host "Materializing archive from Google Drive with resumable streaming..."
+    & $Python "$PSScriptRoot\stream_copy_file.py" `
+        --source $SourceArchive `
+        --destination $localArchiveFull `
+        --expected-bytes $ExpectedArchiveBytes
+    if ($LASTEXITCODE -ne 0) {
+        throw "Streaming copy failed with exit code $LASTEXITCODE."
     }
 }
 
@@ -69,6 +101,11 @@ if ($local.Length -ne $ExpectedArchiveBytes) {
 }
 
 Write-Host "Archive ready: $localArchiveFull ($($local.Length) bytes)"
+
+Write-Host 'Checking the completed local ZIP table...'
+if (-not (Test-ZipReadable $localArchiveFull)) {
+    throw 'The completed local ZIP is unreadable.'
+}
 
 if ($Extract) {
     $dataRootFull = [System.IO.Path]::GetFullPath($DataRoot)
@@ -88,9 +125,14 @@ if ($Validate) {
         throw "Python environment not found: $Python"
     }
 
+    $validationRoot = [System.IO.Path]::GetFullPath($DataRoot)
+    $nestedRoot = Join-Path $validationRoot 'v1.0-trainval'
+    if (Test-Path -LiteralPath (Join-Path $nestedRoot 'v1.0-trainval\category.json')) {
+        $validationRoot = $nestedRoot
+    }
     $validationOutput = Join-Path ([System.IO.Path]::GetFullPath($DataRoot)) 'keyframe_validation.json'
     & $Python "$PSScriptRoot\validate_nuscenes_keyframes.py" `
-        --dataroot ([System.IO.Path]::GetFullPath($DataRoot)) `
+        --dataroot $validationRoot `
         --version v1.0-trainval `
         --output $validationOutput
     if ($LASTEXITCODE -ne 0) {
