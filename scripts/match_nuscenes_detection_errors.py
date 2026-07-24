@@ -50,9 +50,10 @@ def build_gt_rows(nusc: NuScenes, features: pd.DataFrame, class_range: dict[str,
     feature_by_token = features.set_index("annotation_token", drop=False)
     rows = []
 
-    for ann in nusc.sample_annotation:
+    for annotation_token in feature_by_token.index:
+        ann = nusc.get("sample_annotation", annotation_token)
         detection_name = category_to_detection_name(ann["category_name"])
-        if detection_name is None or ann["token"] not in feature_by_token.index:
+        if detection_name is None:
             continue
         feature = feature_by_token.loc[ann["token"]].to_dict()
         eligible = (
@@ -73,9 +74,16 @@ def build_gt_rows(nusc: NuScenes, features: pd.DataFrame, class_range: dict[str,
     return pd.DataFrame(rows)
 
 
-def filter_predictions(predictions: list[dict], class_range: dict[str, float], ego_xy: np.ndarray) -> list[dict]:
+def filter_predictions(
+    predictions: list[dict],
+    class_range: dict[str, float],
+    ego_xy: np.ndarray,
+    score_threshold: float,
+) -> list[dict]:
     filtered = []
     for prediction in predictions:
+        if float(prediction.get("detection_score", 0.0)) < score_threshold:
+            continue
         detection_name = prediction.get("detection_name")
         if detection_name not in class_range:
             continue
@@ -94,12 +102,13 @@ def match_sample(
     predictions: list[dict],
     class_range: dict[str, float],
     threshold: float,
+    score_threshold: float,
 ) -> tuple[list[dict], list[dict]]:
     sample = nusc.get("sample", sample_token)
     lidar_data = nusc.get("sample_data", sample["data"]["LIDAR_TOP"])
     ego_pose = nusc.get("ego_pose", lidar_data["ego_pose_token"])
     ego_xy = np.asarray(ego_pose["translation"][:2], dtype=float)
-    predictions = filter_predictions(predictions, class_range, ego_xy)
+    predictions = filter_predictions(predictions, class_range, ego_xy, score_threshold)
 
     unmatched_gt = set(gt_indices)
     matches: dict[int, dict] = {}
@@ -178,6 +187,7 @@ def main() -> None:
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--model-name", required=True)
     parser.add_argument("--distance-threshold", type=float, default=2.0)
+    parser.add_argument("--score-threshold", type=float, default=0.05)
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir)
@@ -191,8 +201,13 @@ def main() -> None:
     gt_indices_by_sample = gt_df.groupby("sample_token").groups
     object_rows: list[dict] = []
     fp_rows: list[dict] = []
-    for sample in nusc.sample:
-        sample_token = sample["token"]
+    # The prediction JSON defines the evaluated split. Including feature-only
+    # tokens would incorrectly count non-inferred train samples as all-FN.
+    evaluation_tokens = sorted(predictions)
+    scene_by_sample: dict[str, str] = {}
+    for sample_token in evaluation_tokens:
+        sample = nusc.get("sample", sample_token)
+        scene_by_sample[sample_token] = nusc.get("scene", sample["scene_token"])["name"]
         indices = list(gt_indices_by_sample.get(sample_token, []))
         matched, fps = match_sample(
             nusc,
@@ -202,6 +217,7 @@ def main() -> None:
             predictions.get(sample_token, []),
             config.class_range,
             args.distance_threshold,
+            args.score_threshold,
         )
         object_rows.extend(matched)
         fp_rows.extend(fps)
@@ -216,28 +232,37 @@ def main() -> None:
         mean_translation_error_m=("translation_error_m", "mean"),
     )
     fp_counts = false_positives.groupby("sample_token").size().rename("false_positive_count")
+    frame_base = pd.DataFrame(
+        {
+            "sample_token": evaluation_tokens,
+            "scene_name": [scene_by_sample[token] for token in evaluation_tokens],
+        }
+    )
+    frame_errors = frame_base.merge(frame_errors, on=["scene_name", "sample_token"], how="left")
     frame_errors = frame_errors.merge(fp_counts, on="sample_token", how="left")
+    for column in ("gt_count", "false_negative_count", "matched_count"):
+        frame_errors[column] = frame_errors[column].fillna(0).astype(int)
     frame_errors["false_positive_count"] = frame_errors["false_positive_count"].fillna(0).astype(int)
 
     for frame in (object_errors, false_positives, frame_errors):
         frame.insert(0, "model_name", args.model_name)
+        frame.insert(1, "score_threshold", args.score_threshold)
 
     object_errors.to_csv(output_dir / "object_detection_errors.csv", index=False, encoding="utf-8-sig")
     false_positives.to_csv(output_dir / "false_positive_predictions.csv", index=False, encoding="utf-8-sig")
     frame_errors.to_csv(output_dir / "frame_detection_errors.csv", index=False, encoding="utf-8-sig")
 
-    print(
-        json.dumps(
-            {
-                "model_name": args.model_name,
-                "eligible_gt_objects": len(object_errors),
-                "false_negative_rate": float(object_errors["false_negative"].mean()),
-                "false_positives": len(false_positives),
-                "distance_threshold_m": args.distance_threshold,
-            },
-            indent=2,
-        )
-    )
+    summary = {
+        "model_name": args.model_name,
+        "eligible_gt_objects": len(object_errors),
+        "false_negative_rate": float(object_errors["false_negative"].mean()),
+        "false_positives": len(false_positives),
+        "distance_threshold_m": args.distance_threshold,
+        "score_threshold": args.score_threshold,
+    }
+    (output_dir / "matching_summary.json").write_text(
+        json.dumps(summary, indent=2), encoding="utf-8")
+    print(json.dumps(summary, indent=2))
 
 
 if __name__ == "__main__":

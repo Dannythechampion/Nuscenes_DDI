@@ -1,0 +1,86 @@
+﻿official_split,scene_name,scene_token,description,location,sample_count,first_timestamp,last_timestamp
+train,scene-0001,73030fb67d3c46cfb5e590168088ae39,"Construction, maneuver between several trucks",singapore-onenorth,40,1531883530449377,1531883549948947
+train,scene-0002,c3e0e9f6ee8d4170a3d22a6179f1ca3a,"Intersection, peds, waiting vehicle, parked motorcycle at parking lot",singapore-onenorth,40,1531883719448979,1531883738949164
+train,scene-0004,25496f19ffd14bd088cb430bfc01a4d7,"Random scene, arrive at intersection, cross intersection, jaywalkers",singapore-onenorth,40,1531883985948699,1531884005398527
+train,scene-0005,6f5133fe62b240e797bac25aeff8b531,"Overtaken by taxi, construction site",singapore-onenorth,39,1531884104147859,1531884123049151
+train,scene-0006,7deb4760e2244f32b57f9d631b535b66,"Sitting construction worker, parked bicycle, ped walking along road, construction vehicle, worker sitting on back of van",singapore-onenorth,40,1531884156948944,1531884176448538
+train,scene-0007,bc219c0fa63b43b4b9dddab47fce1fef,"Van overtaking us, peds, jaywalker, bicycle rack, turn left",singapore-onenorth,39,1531884258048868,1531884277148664
+train,scene-0008,9a61a88ed9094334a73aa93c08222110,"Several moving pedestrians, parked cards and motorcycle",singapore-onenorth,40,1531884277949350,1531884297050805
+train,scene-0009,dd61533869aa48f2aaa7e8a6418bdbe6,"Peds crossing, parked cars, garbage, peds waiting",singapore-onenorth,40,1531884297950477,1531884317150380
+train,scene-0010,daa9fce50073470398da3c2bccdaf21b,"Parked motorcycle, person pickung up garbage, pass construction vehicles and entrance to construction site",singapore-onenorth,40,1531884391046861,1531884410398855
+train,scene-0011,c075fbdd97124beaba95bc5c25149f30,"Turn left, pass trucks on both sides, construction workers, sleeping construction workers, garbage, parked cars",singapore-onenorth,40,1531884525949273,1531884545449420
+train,scene-0019,de943e246dad4ad686de98008a634ecf,"Turn left, waiting peds, turn left",singapore-onenorth,40,1531885862549942,1531885881798485
+train,scene-0020,4d475873416a4860900f5af213e0027c,"Turn right, walking peds, pedestrian in blind spot in couple of frames, car park exit",singapore-onenorth,39,1531885907648241,1531885926698295
+train,scene-0021,03ee880dd4e348f4b3407f0d073c7c70,"Wait at intersection, jaywalkers, parking lot, parked bicycle, turn right, construction, truck",singapore-onenorth,40,1531885977549637,1531885996948606
+train,scene-0022,7e3a6bdd6c6f4c8fb018cff404974446,"Barriers, construction, lane switch, turn left",singapore-onenorth,40,1531885998548873,1531886017948932
+train,scene-0023,d0880a386b6d434bb5cd13c134af7a3e,"Overtake parked car, bus turning, motorcycle",singapore-onenorth,40,1531886021549259,1531886040948764
+train,scene-0024,d7ebcbbd26d849b384c11bec8df28a9b,"Intersection, peds in cafe, parked motorcycle, ped crossing",singapore-onenorth,40,1531886044547412,1531886063898259
+train,scene-0025,0c601ff2bf004fccafec366b08bf29e2,Ped crossing street in front of ego vehicle,singapore-onenorth,40,1531886069549530,1531886088898203
+train,scene-0026,b79d940da8df43d09ee972c2414ffeca,"Parked cars, peds on the roadside",singapore-onenorth,39,1531886089648560,1531886108698017
+train,scene-0027,1d4db80d13f342aba4881b38099bc4b7,"Delivery motorcycle turns left, veh turn right",singapore-onenorth,40,1531886118549020,1531886138048592
+train,scene-0028,3a1850241080418b88dcee97c7d17ed7,"Taxi parked on road, bicycle rack, many peds, many jaywalkers, parked bicycles, ped exiting taxi, ped crossing traffic light, lane change, peds crossing crosswalk",singapore-onenorth,40,1531886138648560,1531886158047532
+train,scene-0029,6520b5f0d568414c973f791b30ee1548,"Waiting, peds crossing intersection",singapore-onenorth,40,1531886158547385,1531886177698611
+train,scene-0030,82aef599650d462db73731b7ff40918b,"Two parked motorcycles, overtake",singapore-onenorth,40,1531886197549336,1531886217047819
+train,scene-0031,f444b757d7e2444c889da10f02b73491,"Construction, workers sitting on grass, garbage",singapore-onenorth,40,1531886222549204,1531886241948703
+train,scene-0032,9047b53fd41540649dce014a128cbe1b,"Turn left, motorcycle driving, ped sitting",singapore-onenorth,40,1531886242549231,1531886262048818
+train,scene-0033,6e81ee0f64274490a403bbd6482c2bf9,"Low traffic, following bus",singapore-onenorth,40,1531886322549923,1531886341899596
+train,scene-0034,bb73edb93a0a46c4be997c576e9beb61,"No traffic, dead end street, overtake parked truck",singapore-onenorth,39,1531886382648377,1531886401698944
+train,scene-0041,359f9c029ae44e1d9d47c05bc7915561,"Turn left, arrive at busy intersection, red light",singapore-onenorth,40,1532401490648576,1532401509946870
+train,scene-0042,c6c092a66329470f836714f46b92d59b,"Parked cars, many peds, parked bicycles, trash can, parking lots",singapore-onenorth,41,1532401552648135,1532401572148259
+train,scene-0043,70368a18644046f898ab836fc8a3c03f,"Busy intersection, oncoming traffic, construction zone on the left",singapore-onenorth,39,1532401609698140,1532401628898592
+train,scene-0044,8758419c03ab47a59ea6d6620176f3a3,"Truck turns, parked cars, bump, bikes",singapore-onenorth,40,1532401759647663,1532401778897322
+train,scene-0045,eac3102e4cc24d4b95532bcc711a902f,"Full parking lot, peds, exiting from car park",singapore-onenorth,39,1532402002147350,1532402021197896
+train,scene-0046,798e8504b4364d378270333a349ef508,"Busy intersection, ped crossing, waiting for traffic light, construction zone on the left",singapore-onenorth,39,1532402042147902,1532402061197933
+train,scene-0047,4047f251c21a475abb49518e0fa6fa9e,"Construction workers close to road, vehicle turn out, cross intersection",singapore-onenorth,40,1532402133146892,1532402152548046
+train,scene-0048,cf550d9670274ac1a7f274fbacb39c48,"Construction, narrow road, construction workers, heavy construction vehicles, right turn",singapore-onenorth,40,1532402156048289,1532402175448353
+train,scene-0049,095d9b93b583425f910ae2afaf1d017d,"Construction, barriers behind net, parked trucks, excavators, turn left",singapore-onenorth,39,1532402176148932,1532402195446144
+train,scene-0050,9a81caa3d5134d7f87ee4786ccef68f7,"Narrow street, seveal peds, shadows, turn left, parked motorcycle",singapore-onenorth,39,1532402279050410,1532402298197808
+train,scene-0051,0e37d4a357db4246a908cfd97d17efc6,"Pass parked vehicles, peds, arrive at intersection",singapore-onenorth,39,1532402306148245,1532402325447746
+train,scene-0052,37b32e4e8cf846679b2c0cb342dbd4aa,"Oncoming car in the same lane, overtake parked car, turn left",singapore-onenorth,40,1532402326147237,1532402345447736
+train,scene-0053,6d4b2bd795ae4c66900ad98ccd2371a6,"Cross intersection in group of cars, peds, bike rack",singapore-onenorth,39,1532402418046971,1532402437297184
+train,scene-0054,8b43539a55374b6c8ed60c95a42d63a2,"Turn left, many parked heavy trucks, workers",singapore-onenorth,39,1532402472146385,1532402491297629
+train,scene-0055,446af4b1d7da4735a607bc3e45c2e0b3,"Bus stop left, parked cars right, oncoming bus",singapore-onenorth,40,1532402583547406,1532402602697536
+train,scene-0056,83773bcf46ac486383529098de0542dd,"Peds, nature, construction, trash can, parked truck, turn right",singapore-onenorth,41,1532402721546946,1532402741048211
+train,scene-0057,433a14f8dcf5457fb2c4def5c749122a,"Jaywalkers, parked bike and scooter, parked car on the main road",singapore-onenorth,39,1532402741548655,1532402760947035
+train,scene-0058,9a1188aba4bf458c8220818a6c0be55a,"Construction, strange cleaning vehicle parked on our lane",singapore-onenorth,39,1532402815547978,1532402834697542
+train,scene-0059,dcd5bc29543747e28ef02816dd458290,"Wait at intersection, bike on sidewalk, worker blowing leaves",singapore-onenorth,41,1532402855548583,1532402875048168
+train,scene-0060,bb028034cb474e3da8953f83752a70a9,"Wait at intersection, bike on sidewalk, worker blowing leaves, bicycle crossing",singapore-onenorth,40,1532402875547481,1532402894947537
+train,scene-0061,cc8c0bf57f984915a77078b10eb33198,"Parked truck, construction, intersection, turn left, following a van",singapore-onenorth,39,1532402927647951,1532402946797517
+train,scene-0062,762e6aac0d6f4c1b9b0286ab4b2da654,"Change lane, parked cars, overhead walkways",boston-seaport,39,1533153245297761,1533153264447331
+train,scene-0063,a8819942e8bb43b6a832c56dfb78cfc6,"Exit passage, parking lot, flag, trucks, wait at intersection",boston-seaport,39,1533153272297167,1533153291547371
+train,scene-0064,7ad94b6e54f641208bf59cba6bb55220,"Parking lots, oncoming special electrical vehicle",boston-seaport,40,1533153292297164,1533153311697784
+train,scene-0065,59530445fcc04c2090bfaf63f342f794,"Wait at intersection, truck, peds, turn right, parking lot",boston-seaport,40,1533153343298570,1533153362548061
+train,scene-0066,30e77a3561ce4f1bb4fd90e322ea29d7,"Parking lots, parked truck, construction, congestion, worker directing traffic, passing cars",boston-seaport,39,1533153403297326,1533153422645986
+train,scene-0067,cb0cd06a1dd84271968466d7b65e48f8,"Exit construction, ped on crosswalk, construction workers, parking lot",boston-seaport,40,1533153430298562,1533153449697386
+train,scene-0068,b0b26c1e5a1140e69598422f12ae1dc0,"Two turning trucks, wait, turn left",boston-seaport,39,1533153458396528,1533153477447639
+train,scene-0069,a5d7cc4bf3404cccb89932d94ccb9da6,"Turn left, peds near parked bus, bird",boston-seaport,40,1533153480297615,1533153499698231
+train,scene-0070,c0cb50847c3949a0b4baf2e200ac897c,"Peds, ped with bag, bus stop, parking lot, turn right, follow cyclist, trailers, turn left",boston-seaport,40,1533153515297802,1533153534698971
+train,scene-0071,860ef56791a947baadb27dd00bd5d4b3,"Parked trucks, construction vehicles, road blocked relative to baseline route, find deviation",boston-seaport,40,1533153546297855,1533153565798010
+train,scene-0072,fbf27198b3424e28ab1de2a12eb3dc4a,"Wait at intersection, running ped",boston-seaport,40,1533153630298061,1533153649448193
+train,scene-0073,5557f4edc1464442812293e2ea90a586,"Parked scooter, flock of pigeons, person sitting on top of bench, two trucks passing, turn right",boston-seaport,40,1533153670398249,1533153689797266
+train,scene-0074,78c5f7d7b547483c906d8524a8c3190f,"Wait at intersection, turn left, bike rack, parked cars, peds",boston-seaport,40,1533153695297451,1533153714447571
+train,scene-0075,01c3f5e39956402da3e37845632fadca,"Parked cars, oncoming semi, two oncoming bikes, parked motorcycle, bike rack",boston-seaport,39,1533153718447676,1533153737447224
+train,scene-0076,e9a94a93c36a4adb831eb67ec8bdf289,"Turn right, follow cyclist, turn right",boston-seaport,40,1533153747298422,1533153766547527
+val,scene-0003,e7ef871f77f44331aefdebc24ec034b7,"Parking lot, barrier, exit parking lot",singapore-onenorth,40,1533201470448696,1533201489698913
+val,scene-0012,265f002f02d447ad9074813292eef75e,"Nature, bus stop, parked cars, bus exits from the intersection",singapore-onenorth,40,1531885320049418,1531885339547352
+val,scene-0013,41fde20fedcd4d22ab26811688612870,"Follow bus, parked cars, trash cans, parked bicycles, nature",singapore-onenorth,40,1531885340047243,1531885359199050
+val,scene-0014,d1e57234fd6a463d963670938f9f556e,"Follow bus, cross intersection, nature",singapore-onenorth,40,1531885397049170,1531885416299340
+val,scene-0015,813213458a214a39a1d1fc77fa52fa34,"Narrow road, following bus, bus on opposite lane, parked cars",singapore-onenorth,40,1531885417049716,1531885436448657
+val,scene-0016,efa5c96f05594f41a2498eb9f2e7ad99,"Turn left, people on both sides, parked vans",singapore-onenorth,40,1531885613050359,1531885632548306
+val,scene-0017,3dd9ad3f963e4f588d75c112cbf07f56,"Barriers, peds, arriving at busy intersection",singapore-onenorth,40,1531885765148723,1531885784398362
+val,scene-0018,b51869782c0e464b8021eb798609f35f,"Merge left, turn into unloading zone",singapore-onenorth,40,1531885792049139,1531885811448103
+val,scene-0035,3dd2be428534403ba150a0b60abc6a0a,"Parking lots, trash can, bump, scooter, peds, potential jaywalkers, bus stop, oncoming bus",singapore-onenorth,40,1532400183697633,1532400202898082
+val,scene-0036,5a0dd8908a3a459b83ec5eb6ac7d0f82,"Parked bicycle, construction, peds, workers, construction vehicle, bike racks",singapore-onenorth,40,1532400226697477,1532400246147283
+val,scene-0038,2f56eb47c64f43df8902d9f88aa8a019,"Parked construction vehicles, peds, garbage",singapore-onenorth,40,1532400339698223,1532400359198377
+val,scene-0039,8edbc31083ab4fb187626e5b3c0411f7,"Busy street, parked cars, parking lot, ped sitting at bus stop, motorcycle driving",singapore-onenorth,40,1532400513697151,1532400533147533
+val,scene-0092,7365495b74464629813b41eacdb711af,"Drive through passage, peds walking alongside lane",boston-seaport,40,1533151061547455,1533151080797639
+val,scene-0093,cba3ddd5c3664a43b6a08e586e094900,"Turn right, parking lots, cross intersection",boston-seaport,39,1533151182547321,1533151201647160
+val,scene-0094,91c071bcc1ad4fa1b555399e1cfbab79,"Oncoming cyclist, cars, wait at intersection",boston-seaport,40,1533151203547653,1533151222947705
+val,scene-0095,b4b82c4d338a4b6d86835388ce076345,"Wait at intersection, peds occluded, start driving",boston-seaport,39,1533151249647949,1533151268696881
+val,scene-0096,68e79a88244f447f993a72da444b29ba,"Cross busy intersection, cyclist nearby, construction barriers and cones",boston-seaport,39,1533151269547348,1533151288647157
+val,scene-0097,2eb4d7f00e584a548aa0b899638bfb0a,"Wait at red light, turns green, cross intersection",boston-seaport,39,1533151345547340,1533151364798112
+val,scene-0098,c65c4acf86954f8cbd53a3541a3bfa3a,"Parked cars, peds, bus stop, bicycle rack, sign trailer, bicyclist, ped carrying object, bridge",boston-seaport,39,1533151365547938,1533151384698049
+val,scene-0099,5af9c7f124d84e7e9ac729fafa40ea01,"Parked vans, switch lane, construction zone in the right, bike following in rear, passed by active motorcycle",boston-seaport,39,1533151417647268,1533151436699610
+val,scene-0100,afd73f70ff7d46d6b772d341c08e31a5,"Wait at red light, oncoming cyclist, peds, parked bicycle, parked construction car",boston-seaport,40,1533151471547121,1533151490947745
+val,scene-0101,01452fbfbf4543af8acdfd3e8a1ee806,"Concrete mixer spinning, traffic cones, wait at red light, move onto bridge, lane change",boston-seaport,40,1533151514547047,1533151533947593
+val,scene-0102,ddb615d9bb22484cabc6545b632a1025,"Turn right at intersection, cross bridge, many peds",boston-seaport,40,1533151580547760,1533151599897593
