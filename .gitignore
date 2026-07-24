@@ -1,0 +1,13 @@
+.venv-analysis/
+data/
+outputs/
+__pycache__/
+*.pyc
+.idea/
+.vscode/
+*.zip
+*.tgz
+*.tar
+*.pth
+*.pt
+*.ckpt

@@ -1,0 +1,7 @@
+nuscenes-devkit==1.2.0
+numpy==1.26.4
+pandas==3.0.1
+matplotlib==3.11.1
+scikit-learn==1.9.0
+tqdm==4.69.0
+requests==2.32.5

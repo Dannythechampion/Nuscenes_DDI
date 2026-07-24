@@ -1,0 +1,42 @@
+{
+  "passed": true,
+  "dataroot": "C:\\Users\\UserK\\Documents\\Intern Project\\data\\nuscenes",
+  "version": "v1.0-mini",
+  "required_channels": [
+    "CAM_FRONT",
+    "CAM_FRONT_RIGHT",
+    "CAM_BACK_RIGHT",
+    "CAM_BACK",
+    "CAM_BACK_LEFT",
+    "CAM_FRONT_LEFT",
+    "LIDAR_TOP"
+  ],
+  "expected_counts": {
+    "scenes": 10,
+    "samples": 404
+  },
+  "observed_counts": {
+    "scenes": 10,
+    "samples": 404,
+    "annotations": 18538
+  },
+  "count_checks": {
+    "scenes": true,
+    "samples": true
+  },
+  "maps_present": true,
+  "missing_channels": {},
+  "non_keyframe_links": {},
+  "missing_files": {},
+  "zero_byte_files": {},
+  "checked_size_gib_by_channel": {
+    "CAM_FRONT": 0.068,
+    "CAM_FRONT_RIGHT": 0.07,
+    "CAM_BACK_RIGHT": 0.069,
+    "CAM_BACK": 0.061,
+    "CAM_BACK_LEFT": 0.066,
+    "CAM_FRONT_LEFT": 0.069,
+    "LIDAR_TOP": 0.261
+  },
+  "missing_file_examples": []
+}
