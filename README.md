@@ -8,6 +8,8 @@ NuScenes 장면의 인지 난이도 지표(DDI)가 실제 자율주행 객체 �
 
 단순히 난이도 점수를 만드는 것이 아니라, 각 기준값의 출처와 통계적 타당성을 제시하고 모델의 FN/FP 및 위치·크기·방향 오차와 연결하는 것이 목표입니다.
 
+전체 연구 목적과 검증 절차는 [DDI 연구 목적 및 타당성 검증 프레임워크](docs/research_objective_and_validation_framework.md)에 정리되어 있습니다.
+
 ## 현재 진행 상태
 
 | 단계 | 상태 | 산출물 |
@@ -136,6 +138,7 @@ powershell -ExecutionPolicy Bypass -File scripts\materialize_nuscenes_keyframes.
 
 - [인지 DDI 1차 분석 보고서](docs/인지_DDI_1차_분석_보고서.md)
 - [인지 연구 설계](docs/perception_research_plan.md)
+- [DDI 연구 목적 및 타당성 검증 프레임워크](docs/research_objective_and_validation_framework.md)
 - [모델 실행 계획](docs/perception_model_execution_plan.md)
 - [임계값 근거표](docs/perception_threshold_evidence.csv)
 - [Trainval01 keyframe shard 검증 보고서](docs/trainval01_keyframe_shard_report.md)
