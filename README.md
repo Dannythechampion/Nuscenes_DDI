@@ -19,9 +19,23 @@ NuScenes 장면의 인지 난이도 지표(DDI)가 실제 자율주행 객체 �
 | 기존 임계값 감사 | 완료 | 포화율, 분포, 상관관계, 클래스·거리별 LiDAR 분석 |
 | prediction-GT 오류 매칭 | 완료 | perfect prediction self-test에서 FN=0, FP=0 |
 | trainval01 shard 검증 | 완료 | 85 scenes, 3,376 keyframes, 전체의 9.886% |
-| 전체 keyframe-only trainval 확보 | 미완료 | 나머지 9개 blob 또는 검증된 mirror 필요 |
-| 실제 인지 모델 추론 | 예정 | Camera baseline부터 실행 |
-| DDI-오류 관계 검정 | 예정 | 모델별 효과크기와 민감도 분석 |
+| 공식 val 150-scene keyframe 확보 | 완료 | 6,019 keyframes, camera/LiDAR 누락 0 |
+| LiDAR multi-sweep 확보 | 완료 | 요구 파일 57,916개, 누락 0 |
+| Camera 모델 추론 | 완료 | FCOS3D, PGD |
+| LiDAR 모델 추론 | 완료 | PointPillars, CenterPoint |
+| DDI-오류 관계 검정 | 완료 | 4 models, 20 sensitivity runs |
+| 인지 DDI v1 최종 판정 | 완료 | 사전등록 전체 지지 실패 |
+
+## 150-scene 본실험 결론
+
+공식 validation 150개 scene 전체에서 Camera와 LiDAR DDI의 Easy, Moderate, Hard는 네 모델 모두에서 원시 FN rate가 단조 증가했다. 그러나 거리·클래스·객체 수·box 크기·장소와 scene 군집을 통제한 DDI 효과는 모든 모델에서 유의한 양의 효과가 아니었다.
+
+따라서 **현재 합성 DDI v1은 확정 지표로 채택하지 않는다.** 가림과 LiDAR 5-point 희소성은 유망한 component로 남지만, 밀집도 가중치, 동일 가중 평균, frame P75 집계는 train 또는 별도 개발 cohort에서 재설계한 뒤 새로운 held-out 자료로 검증해야 한다.
+
+- [150-scene 전체 검증 보고서](results/val150/인지_DDI_150scene_검증_보고서.md)
+- [사전등록 검증 절차](docs/perception_ddi_v1_preregistered_protocol.md)
+- [모델 성능 요약](results/val150/model_performance_summary.csv)
+- [최종 판정 요약](results/val150/validation_decision_summary.csv)
 
 ## 1차 분석 결론
 
@@ -39,7 +53,7 @@ Mini와 trainval01 shard 분석은 현재 발표 기준을 그대로 확정 임�
 - `P_lidar`: 클래스·거리 조건부 point 희소성, 가림, 밀집도
 - `P_fusion`: Camera/LiDAR 요인의 결합 및 상호작용
 
-위 수치는 `v1.0-mini`에서 얻은 진단 결과이며, 최종 기준은 전체 trainval 분포와 실제 모델 오류로 다시 검증해야 합니다.
+위 항목은 초기 `v1.0-mini` 진단 결과입니다. 이후 공식 val 150개 scene과 네 모델로 수행한 본실험 결과는 위 150-scene 보고서를 기준으로 봅니다.
 
 ## 저장소 구성
 
@@ -123,19 +137,20 @@ powershell -ExecutionPolicy Bypass -File scripts\materialize_nuscenes_keyframes.
 
 검증기는 `850 scenes`, `34,149 keyframes`, 6개 camera channel, `LIDAR_TOP`, annotation/calibration/ego pose/map 및 모든 keyframe 파일 경로를 확인합니다. 일부 shard라면 전체 통과 대신 complete sample/scene coverage를 보고합니다.
 
-## 모델 검증 순서
+## 본실험 모델 검증 절차
 
-1. Camera-only FCOS3D와 PGD로 동일 validation keyframe을 추론합니다.
-2. 공식 NuScenes detection JSON을 객체별 GT와 매칭합니다.
-3. FN rate, FP/keyframe, translation/scale/orientation error를 계산합니다.
-4. `P_camera`와 오류의 관계가 두 모델에서 반복되는지 검정합니다.
-5. LiDAR는 `sweeps_num=0` 조건으로 재학습하거나 single-sweep checkpoint를 사용합니다.
-6. 마지막으로 Fusion 모델과 `P_fusion`을 비교합니다.
-
-연구용 keyframe 구성에서는 intermediate sweeps를 사용하지 않으므로 일반적인 multi-sweep PointPillars/CenterPoint 공식 성능과 직접 비교하지 않습니다.
+1. 외부 기준을 nuScenes 변수로 번역하고 validation 결과 확인 전에 고정했습니다.
+2. Camera FCOS3D·PGD와 LiDAR PointPillars·CenterPoint를 공식 val 6,019개 keyframe에서 실행했습니다.
+3. LiDAR 모델에는 공식 config대로 과거 9-10개 sweep을 제공했습니다.
+4. 예측과 GT를 동일 클래스 중심거리로 매칭해 FN, FP, translation error를 계산했습니다.
+5. Scene bootstrap, scene-clustered 회귀, 단일 component·기준선 비교, threshold 민감도 분석을 수행했습니다.
+6. 사전등록 조건을 하나라도 충족하지 못하면 DDI 전체를 지지하지 않는 것으로 판정했습니다.
 
 ## 문서와 결과
 
+- [인지 DDI 150-scene 검증 보고서](results/val150/인지_DDI_150scene_검증_보고서.md)
+- [인지 DDI v1 사전등록 절차](docs/perception_ddi_v1_preregistered_protocol.md)
+- [공식 모델 등록표](docs/val150_model_registry.csv)
 - [인지 DDI 1차 분석 보고서](docs/인지_DDI_1차_분석_보고서.md)
 - [인지 연구 설계](docs/perception_research_plan.md)
 - [DDI 연구 목적 및 타당성 검증 프레임워크](docs/research_objective_and_validation_framework.md)

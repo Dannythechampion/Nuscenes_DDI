@@ -1,0 +1,11 @@
+﻿run_name,strict_monotonic
+centerpoint_d1_s005,True
+centerpoint_d2_s005,True
+centerpoint_d2_s010,True
+centerpoint_d2_s020,True
+centerpoint_d4_s005,True
+pointpillars_d1_s005,True
+pointpillars_d2_s005,True
+pointpillars_d2_s010,True
+pointpillars_d2_s020,True
+pointpillars_d4_s005,True

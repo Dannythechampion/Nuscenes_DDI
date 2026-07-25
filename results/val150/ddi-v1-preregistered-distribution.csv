@@ -1,0 +1,7 @@
+modality,difficulty,keyframes,scenes
+camera,Easy,870,93
+camera,Moderate,2680,145
+camera,Hard,2469,143
+lidar,Easy,1467,137
+lidar,Moderate,4477,150
+lidar,Hard,75,26

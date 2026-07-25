@@ -1,0 +1,5 @@
+modality,model,measured_map,measured_nds,official_map,official_nds,map_delta,nds_delta,prediction_keyframes,predictions
+camera,FCOS3D,0.321244,0.394805,0.321,0.393,0.000244,0.001805,6019,421588
+camera,PGD,0.345760,0.411131,0.346,0.411,-0.000240,0.000131,6019,666944
+lidar,PointPillars,0.336903,0.485506,0.3433,0.491,-0.006397,-0.005494,6019,707206
+lidar,CenterPoint,0.554897,0.640949,0.5611,0.6461,-0.006203,-0.005151,6019,516407

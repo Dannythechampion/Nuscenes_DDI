@@ -24,6 +24,7 @@ import pandas as pd
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.detection.utils import category_to_detection_name
 from nuscenes.nuscenes import NuScenes
+from nuscenes.utils.splits import create_splits_scenes
 from nuscenes.utils.geometry_utils import BoxVisibility, view_points
 
 
@@ -45,6 +46,21 @@ VISIBILITY_SCORE = {
     "2": 7.0,   # 40-60% visible
     "3": 3.0,   # 60-80% visible
     "4": 0.0,   # 80-100% visible
+}
+
+# Official nuScenes visibility bins converted to hidden-fraction midpoint severity.
+VISIBILITY_PRIOR_SCORE = {
+    "1": 8.0,  # 0-40% visible -> midpoint 20% visible -> 80% hidden.
+    "2": 5.0,
+    "3": 3.0,
+    "4": 1.0,
+}
+
+VISIBILITY_PRIOR_LEVEL = {
+    "1": 2,  # Hard: at most 40% visible.
+    "2": 1,  # Moderate: 40-60% visible.
+    "3": 1,  # Moderate: 60-80% visible.
+    "4": 0,  # Easy: 80-100% visible.
 }
 
 
@@ -78,6 +94,76 @@ def score_truncation(truncation_ratio: float | None) -> float:
     if truncation_ratio <= 0.50:
         return 7.0
     return 10.0
+
+
+def score_kitti_truncation(truncation_ratio: float | None) -> float:
+    """Map KITTI's 15/30/50% truncation boundaries to a 0-10 severity scale."""
+    if truncation_ratio is None or math.isnan(truncation_ratio):
+        return np.nan
+    if truncation_ratio <= 0.15:
+        return 0.0
+    if truncation_ratio <= 0.30:
+        return 10.0 / 3.0
+    if truncation_ratio <= 0.50:
+        return 20.0 / 3.0
+    return 10.0
+
+
+def kitti_truncation_level(truncation_ratio: float | None) -> float:
+    if truncation_ratio is None or math.isnan(truncation_ratio):
+        return np.nan
+    if truncation_ratio <= 0.15:
+        return 0.0
+    if truncation_ratio <= 0.30:
+        return 1.0
+    return 2.0
+
+
+def lidar_point_level(num_lidar_pts: int) -> int:
+    """Use Waymo's five-point boundary plus the physical zero-return case."""
+    if num_lidar_pts == 0:
+        return 2
+    if num_lidar_pts <= 5:
+        return 1
+    return 0
+
+
+def ordinal_name(level: int) -> str:
+    return ("Easy", "Moderate", "Hard")[level]
+
+
+def quantile_or_nan(values: Iterable[float], quantile: float) -> float:
+    arr = np.array([v for v in values if not pd.isna(v)], dtype=float)
+    return float(np.quantile(arr, quantile)) if arr.size else np.nan
+
+
+def mean_components(*values: float) -> float:
+    valid = [value for value in values if not pd.isna(value)]
+    return float(np.mean(valid)) if valid else np.nan
+
+
+def ego_speed_mps(nusc: NuScenes, sample: dict) -> float:
+    """Estimate ego speed from adjacent keyframe LiDAR ego poses."""
+    neighbors = []
+    for key in ("prev", "next"):
+        token = sample.get(key)
+        if not token:
+            continue
+        other = nusc.get("sample", token)
+        sample_data = nusc.get("sample_data", other["data"]["LIDAR_TOP"])
+        pose = nusc.get("ego_pose", sample_data["ego_pose_token"])
+        neighbors.append((other["timestamp"], np.array(pose["translation"][:2], dtype=float)))
+    current_data = nusc.get("sample_data", sample["data"]["LIDAR_TOP"])
+    current_pose = nusc.get("ego_pose", current_data["ego_pose_token"])
+    current = (sample["timestamp"], np.array(current_pose["translation"][:2], dtype=float))
+    if len(neighbors) == 2:
+        before, after = sorted(neighbors, key=lambda item: item[0])
+        seconds = (after[0] - before[0]) / 1e6
+        return float(np.linalg.norm(after[1] - before[1]) / seconds) if seconds > 0 else np.nan
+    if len(neighbors) == 1:
+        seconds = abs(neighbors[0][0] - current[0]) / 1e6
+        return float(np.linalg.norm(neighbors[0][1] - current[1]) / seconds) if seconds > 0 else np.nan
+    return np.nan
 
 
 def category_group(category_name: str) -> str:
@@ -193,6 +279,7 @@ def extract_rows(
     nusc: NuScenes,
     include_truncation: bool,
     require_existing_keyframes: bool = False,
+    selected_scene_names: set[str] | None = None,
 ) -> tuple[list[dict], list[dict], int]:
     scene_by_token = {scene["token"]: scene for scene in nusc.scene}
     detection_class_range = config_factory("detection_cvpr_2019").class_range
@@ -201,10 +288,12 @@ def extract_rows(
     skipped_missing_keyframes = 0
 
     for sample in nusc.sample:
+        scene = scene_by_token[sample["scene_token"]]
+        if selected_scene_names is not None and scene["name"] not in selected_scene_names:
+            continue
         if require_existing_keyframes and not sample_has_keyframe_files(nusc, sample):
             skipped_missing_keyframes += 1
             continue
-        scene = scene_by_token[sample["scene_token"]]
         annotations = [nusc.get("sample_annotation", token) for token in sample["anns"]]
 
         groups = [category_group(ann["category_name"]) for ann in annotations]
@@ -216,6 +305,9 @@ def extract_rows(
         weighted_complexity = 2.0 * vru_count + 1.0 * vehicle_count + 0.5 * static_count + 0.5 * other_count
 
         visibility_scores = [VISIBILITY_SCORE.get(ann["visibility_token"], np.nan) for ann in annotations]
+        visibility_prior_scores = [
+            VISIBILITY_PRIOR_SCORE.get(ann["visibility_token"], np.nan) for ann in annotations
+        ]
         lidar_scores = [score_lidar_points(ann["num_lidar_pts"]) for ann in annotations]
 
         truncation_by_token: dict[str, float | None] = {}
@@ -230,9 +322,30 @@ def extract_rows(
         lidar_sample_data = nusc.get("sample_data", sample["data"]["LIDAR_TOP"])
         ego_pose = nusc.get("ego_pose", lidar_sample_data["ego_pose_token"])
         ego_xy = np.array(ego_pose["translation"][:2], dtype=float)
+        ego_speed = ego_speed_mps(nusc, sample)
+        annotation_distances = [
+            float(np.linalg.norm(np.array(ann["translation"][:2], dtype=float) - ego_xy))
+            for ann in annotations
+        ]
+        moving_vehicle_count_8m = 0
+        for ann, group, distance in zip(annotations, groups, annotation_distances, strict=True):
+            attributes = {
+                nusc.get("attribute", token)["name"] for token in ann["attribute_tokens"]
+            }
+            if group == "vehicle" and distance < 8.0 and "vehicle.moving" in attributes:
+                moving_vehicle_count_8m += 1
+        nuplan_near_multiple_vehicles = bool(
+            moving_vehicle_count_8m > 6 and not pd.isna(ego_speed) and ego_speed > 6.0
+        )
+        density_prior_score = min(10.0, moving_vehicle_count_8m / 7.0 * 10.0)
 
-        for ann, group, visibility_score, lidar_score in zip(
-            annotations, groups, visibility_scores, lidar_scores, strict=True
+        for ann, group, visibility_score, visibility_prior_score, lidar_score in zip(
+            annotations,
+            groups,
+            visibility_scores,
+            visibility_prior_scores,
+            lidar_scores,
+            strict=True,
         ):
             ann_xy = np.array(ann["translation"][:2], dtype=float)
             distance_ego_m = float(np.linalg.norm(ann_xy - ego_xy))
@@ -243,6 +356,14 @@ def extract_rows(
                 and distance_ego_m < detection_class_range[detection_name]
             )
             truncation_ratio = truncation_by_token.get(ann["token"])
+            visibility_level = VISIBILITY_PRIOR_LEVEL.get(ann["visibility_token"], 2)
+            truncation_level = kitti_truncation_level(truncation_ratio)
+            camera_object_level = (
+                visibility_level
+                if pd.isna(truncation_level)
+                else max(visibility_level, int(truncation_level))
+            )
+            lidar_level = lidar_point_level(ann["num_lidar_pts"])
             size_w, size_l, size_h = ann["size"]
             object_rows.append(
                 {
@@ -256,6 +377,8 @@ def extract_rows(
                     "official_eval_eligible": official_eval_eligible,
                     "visibility_token": ann["visibility_token"],
                     "visibility_score": visibility_score,
+                    "camera_occlusion_prior_score": visibility_prior_score,
+                    "camera_occlusion_prior_level": visibility_level,
                     "num_lidar_pts": ann["num_lidar_pts"],
                     "num_radar_pts": ann["num_radar_pts"],
                     "num_sensor_pts": ann["num_lidar_pts"] + ann["num_radar_pts"],
@@ -268,6 +391,16 @@ def extract_rows(
                     "box_volume_m3": size_w * size_l * size_h,
                     "truncation_ratio": truncation_ratio,
                     "truncation_score": score_truncation(truncation_ratio),
+                    "camera_truncation_kitti_score": score_kitti_truncation(truncation_ratio),
+                    "camera_truncation_kitti_level": truncation_level,
+                    "camera_object_ddi_prior": mean_components(
+                        visibility_prior_score, score_kitti_truncation(truncation_ratio)
+                    ),
+                    "camera_object_difficulty_level": camera_object_level,
+                    "camera_object_difficulty": ordinal_name(camera_object_level),
+                    "lidar_object_ddi_prior": lidar_level * 5.0,
+                    "lidar_object_difficulty_level": lidar_level,
+                    "lidar_object_difficulty": ordinal_name(lidar_level),
                 }
             )
 
@@ -276,17 +409,68 @@ def extract_rows(
         sensor_point_values = np.array(
             [ann["num_lidar_pts"] + ann["num_radar_pts"] for ann in annotations], dtype=float
         )
-        distances = np.array(
-            [np.linalg.norm(np.array(ann["translation"][:2], dtype=float) - ego_xy) for ann in annotations],
-            dtype=float,
-        )
+        distances = np.array(annotation_distances, dtype=float)
         detection_names = [category_to_detection_name(ann["category_name"]) for ann in annotations]
-        detection_class_count = sum(name is not None for name in detection_names)
-        official_eval_eligible_count = sum(
+        eligible_flags = [
             name is not None
             and ann["num_lidar_pts"] + ann["num_radar_pts"] > 0
             and distance < detection_class_range[name]
             for ann, name, distance in zip(annotations, detection_names, distances, strict=True)
+        ]
+        detection_class_count = sum(name is not None for name in detection_names)
+        official_eval_eligible_count = sum(eligible_flags)
+        eligible_visibility_prior = [
+            score for score, eligible in zip(visibility_prior_scores, eligible_flags, strict=True)
+            if eligible
+        ]
+        eligible_truncation_prior = [
+            score_kitti_truncation(truncation_by_token.get(ann["token"]))
+            for ann, eligible in zip(annotations, eligible_flags, strict=True)
+            if eligible
+        ]
+        eligible_lidar_points = np.array(
+            [ann["num_lidar_pts"] for ann, eligible in zip(annotations, eligible_flags, strict=True) if eligible],
+            dtype=float,
+        )
+        camera_occlusion_p75 = quantile_or_nan(eligible_visibility_prior, 0.75)
+        camera_truncation_p75 = quantile_or_nan(eligible_truncation_prior, 0.75)
+        lidar_le5_prop = (
+            float((eligible_lidar_points <= 5).mean()) if eligible_lidar_points.size else np.nan
+        )
+        eligible_camera_levels = [
+            max(
+                VISIBILITY_PRIOR_LEVEL.get(ann["visibility_token"], 2),
+                int(kitti_truncation_level(truncation_by_token.get(ann["token"])))
+                if not pd.isna(kitti_truncation_level(truncation_by_token.get(ann["token"])))
+                else 0,
+            )
+            for ann, eligible in zip(annotations, eligible_flags, strict=True)
+            if eligible
+        ]
+        eligible_lidar_levels = [
+            lidar_point_level(ann["num_lidar_pts"])
+            for ann, eligible in zip(annotations, eligible_flags, strict=True)
+            if eligible
+        ]
+        camera_frame_level = int(
+            max(
+                2 if nuplan_near_multiple_vehicles else 0,
+                math.ceil(quantile_or_nan(eligible_camera_levels, 0.75))
+                if eligible_camera_levels else 0,
+            )
+        )
+        lidar_frame_level = int(
+            max(
+                2 if nuplan_near_multiple_vehicles else 0,
+                math.ceil(quantile_or_nan(eligible_lidar_levels, 0.75))
+                if eligible_lidar_levels else 0,
+            )
+        )
+        camera_ddi_prior = mean_components(
+            density_prior_score, camera_occlusion_p75, camera_truncation_p75
+        )
+        lidar_ddi_prior = mean_components(
+            density_prior_score, lidar_le5_prop * 10.0
         )
 
         row = {
@@ -304,6 +488,10 @@ def extract_rows(
             "other_count": other_count,
             "weighted_complexity": weighted_complexity,
             "count_score": score_count(weighted_complexity, raw_count),
+            "ego_speed_mps": ego_speed,
+            "moving_vehicle_count_8m": moving_vehicle_count_8m,
+            "nuplan_near_multiple_vehicles": nuplan_near_multiple_vehicles,
+            "density_prior_score": density_prior_score,
             "visibility_mean_score": mean_or_nan(visibility_scores),
             "visibility_max_score": max_or_nan(visibility_scores),
             **{
@@ -323,6 +511,15 @@ def extract_rows(
             "truncation_max_ratio": max_or_nan(truncation_ratios),
             "truncation_mean_score": mean_or_nan(truncation_scores),
             "truncation_max_score": max_or_nan(truncation_scores),
+            "camera_occlusion_p75_prior_score": camera_occlusion_p75,
+            "camera_truncation_p75_kitti_score": camera_truncation_p75,
+            "lidar_le5_point_prop": lidar_le5_prop,
+            "camera_ddi_prior_v1": camera_ddi_prior,
+            "lidar_ddi_prior_v1": lidar_ddi_prior,
+            "camera_difficulty_prior_level_v1": camera_frame_level,
+            "camera_difficulty_prior_v1": ordinal_name(camera_frame_level),
+            "lidar_difficulty_prior_level_v1": lidar_frame_level,
+            "lidar_difficulty_prior_v1": ordinal_name(lidar_frame_level),
         }
         row["score_version"] = "presentation_legacy_v0"
         row["perception_difficulty_score"] = perception_score(row)
@@ -344,6 +541,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataroot", default="data/nuscenes")
     parser.add_argument("--version", default="v1.0-mini")
+    parser.add_argument("--split", choices=("train", "val"))
     parser.add_argument("--output-dir", default="outputs/perception")
     parser.add_argument("--skip-truncation", action="store_true", help="Skip camera projection for faster metadata-only extraction.")
     parser.add_argument(
@@ -357,10 +555,23 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     nusc = NuScenes(version=args.version, dataroot=args.dataroot, verbose=True)
+    split_scene_names = None
+    if args.split:
+        split_scene_names = set(create_splits_scenes()[args.split])
+        split_sample_count = sum(
+            1
+            for sample in nusc.sample
+            if nusc.get("scene", sample["scene_token"])["name"] in split_scene_names
+        )
+        print(
+            f"Selected official {args.split} split: "
+            f"{len(split_scene_names)} scenes, {split_sample_count} keyframes"
+        )
     sample_rows, object_rows, skipped_missing_keyframes = extract_rows(
         nusc,
         include_truncation=not args.skip_truncation,
         require_existing_keyframes=args.require_existing_keyframes,
+        selected_scene_names=split_scene_names,
     )
     sample_df = pd.DataFrame(sample_rows).sort_values("perception_difficulty_score", ascending=False)
     object_df = pd.DataFrame(object_rows)

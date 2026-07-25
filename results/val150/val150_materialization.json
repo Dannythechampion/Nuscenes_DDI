@@ -1,0 +1,16 @@
+{
+  "split": "val",
+  "scenes": 150,
+  "samples": 6019,
+  "camera_keyframes_required": 36114,
+  "lidar_keyframes_required": 6019,
+  "keyframes_present": 42133,
+  "keyframes_missing": 0,
+  "historical_sweeps_per_keyframe": 10,
+  "unique_lidar_sweeps_required": 57916,
+  "lidar_sweeps_present": 57916,
+  "lidar_sweeps_missing": 0,
+  "complete_for_camera_keyframe_models": true,
+  "complete_for_lidar_10_frame_models": true,
+  "missing_examples": []
+}

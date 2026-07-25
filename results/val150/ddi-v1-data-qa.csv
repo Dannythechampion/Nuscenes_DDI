@@ -1,0 +1,14 @@
+check,value,expected,status
+official_val_scenes,150,150,pass
+official_val_keyframes,6019,6019,pass
+unique_sample_tokens,6019,6019,pass
+perception_object_rows,192041,not_fixed,observed
+official_eval_eligible_objects,121871,not_fixed,observed
+keyframes_without_eligible_objects,71,not_fixed,observed
+eligible_objects_with_zero_lidar_points,3468,not_fixed,observed
+camera_groups_populated,3,3,pass
+lidar_groups_populated,3,3,pass
+nuplan_near_multiple_vehicle_frames,0,not_fixed,observed_no_discrimination
+legacy_weighted_complexity_hard_frames,4734,not_fixed,observed_saturation
+pointpillars_checkpoint_load,pass,pass,pass
+centerpoint_checkpoint_load,pass,pass,pass

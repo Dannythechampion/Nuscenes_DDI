@@ -1,0 +1,5 @@
+model,expected_keyframes,prediction_keyframes,missing_tokens,unexpected_tokens,modality_status
+FCOS3D,6019,6019,0,0,camera_pass
+PGD,6019,6019,0,0,camera_pass
+PointPillars,6019,6019,0,0,lidar_pass
+CenterPoint,6019,6019,0,0,lidar_pass

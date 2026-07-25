@@ -1,0 +1,11 @@
+component,version_or_value
+MMDetection3D,1.4.0
+MMDetection3D_git_commit,fe25f7a51d36e3702f961e198894580d83c4387b
+MMEngine,0.10.7
+PyTorch,2.1.2+cu121
+statsmodels,0.14.5
+SciPy,1.17.1
+GPU,NVIDIA GeForce RTX 4060 Ti 8GB
+nuScenes_split,official_val
+nuScenes_scenes,150
+nuScenes_keyframes,6019

@@ -1,0 +1,50 @@
+{
+  "passed": true,
+  "dataroot": "/mnt/c/Users/UserK/Documents/Intern Project/data/nuscenes-val150",
+  "version": "v1.0-trainval",
+  "required_channels": [
+    "CAM_FRONT",
+    "CAM_FRONT_RIGHT",
+    "CAM_BACK_RIGHT",
+    "CAM_BACK",
+    "CAM_BACK_LEFT",
+    "CAM_FRONT_LEFT",
+    "LIDAR_TOP"
+  ],
+  "expected_counts": {
+    "scenes": 150,
+    "samples": 6019
+  },
+  "observed_counts": {
+    "scenes": 150,
+    "samples": 6019,
+    "annotations": 192041
+  },
+  "count_checks": {
+    "scenes": true,
+    "samples": true
+  },
+  "keyframe_coverage": {
+    "complete_samples": 6019,
+    "missing_samples": 0,
+    "complete_sample_pct": 100.0,
+    "available_scenes": 150,
+    "complete_scenes": 150,
+    "partial_scenes": 0
+  },
+  "maps_present": true,
+  "missing_channels": {},
+  "non_keyframe_links": {},
+  "missing_files": {},
+  "zero_byte_files": {},
+  "checked_size_gib_by_channel": {
+    "CAM_FRONT": 0.826,
+    "CAM_FRONT_RIGHT": 0.851,
+    "CAM_BACK_RIGHT": 0.862,
+    "CAM_BACK": 0.767,
+    "CAM_BACK_LEFT": 0.831,
+    "CAM_FRONT_LEFT": 0.85,
+    "LIDAR_TOP": 3.893
+  },
+  "missing_file_examples": []
+}

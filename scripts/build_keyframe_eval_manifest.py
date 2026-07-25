@@ -92,6 +92,14 @@ def main() -> None:
     sample_df.to_csv(sample_path, index=False, encoding="utf-8-sig")
     scene_df.to_csv(scene_path, index=False, encoding="utf-8-sig")
     val_tokens = sample_df.loc[sample_df["official_split"] == "val", "sample_token"]
+    val_scene_count = int(
+        scene_df.loc[scene_df["official_split"] == "val", "scene_name"].nunique()
+    )
+    if val_scene_count != 150 or len(val_tokens) != 6019:
+        raise RuntimeError(
+            "Official validation cohort is incomplete: "
+            f"{val_scene_count}/150 scenes, {len(val_tokens)}/6019 keyframes"
+        )
     val_token_path.write_text("\n".join(val_tokens) + "\n", encoding="ascii")
 
     print(scene_df.groupby("official_split")["scene_name"].count().to_string())

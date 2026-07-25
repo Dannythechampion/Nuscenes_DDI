@@ -1,0 +1,3 @@
+﻿model_name,composite_spearman_rho,strongest_component,strongest_component_spearman_rho,composite_stronger
+FCOS3D,0.19434960343437882,camera_occlusion_p75_prior_score,0.19739612185084238,False
+PGD,0.2924603553635407,camera_occlusion_p75_prior_score,0.31671740606227505,False

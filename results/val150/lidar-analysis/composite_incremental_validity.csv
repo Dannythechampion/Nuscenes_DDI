@@ -1,0 +1,3 @@
+﻿model_name,composite_spearman_rho,strongest_component,strongest_component_spearman_rho,composite_stronger
+centerpoint,0.1680333596678353,lidar_le5_point_prop,0.14877266737806671,True
+pointpillars,0.2402428722811041,lidar_le5_point_prop,0.23289678708362269,True

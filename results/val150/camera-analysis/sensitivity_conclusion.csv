@@ -1,0 +1,11 @@
+﻿run_name,strict_monotonic
+fcos3d_d1_s005,True
+fcos3d_d2_s005,True
+fcos3d_d2_s010,True
+fcos3d_d2_s020,True
+fcos3d_d4_s005,True
+pgd_d1_s005,True
+pgd_d2_s005,True
+pgd_d2_s010,True
+pgd_d2_s020,True
+pgd_d4_s005,True

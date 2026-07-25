@@ -1,0 +1,6 @@
+criterion,group,keyframes,scenes,interpretation
+raw_annotation_count,less_than_40,3979,140,below_team_boundary
+raw_annotation_count,at_least_40,2040,77,team_40_object_boundary
+weighted_complexity,at_most_5,290,17,legacy_easy
+weighted_complexity,over_5_to_15,995,61,legacy_moderate
+weighted_complexity,over_15,4734,134,legacy_hard

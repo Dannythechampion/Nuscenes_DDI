@@ -8,6 +8,7 @@ from collections import Counter
 from pathlib import Path
 
 from nuscenes.nuscenes import NuScenes
+from nuscenes.utils.splits import create_splits_scenes
 
 
 CAMERAS = (
@@ -33,11 +34,22 @@ def main() -> None:
     parser.add_argument("--version", default="v1.0-trainval")
     parser.add_argument("--output", required=True)
     parser.add_argument("--require-radar", action="store_true")
+    parser.add_argument("--split", choices=("train", "val"))
     args = parser.parse_args()
 
     dataroot = Path(args.dataroot)
     required_channels = (*CAMERAS, "LIDAR_TOP", *(RADARS if args.require_radar else ()))
     nusc = NuScenes(version=args.version, dataroot=str(dataroot), verbose=False)
+    scene_by_token = {scene["token"]: scene for scene in nusc.scene}
+    selected_scene_names = (
+        set(create_splits_scenes()[args.split]) if args.split else None
+    )
+    selected_samples = [
+        sample
+        for sample in nusc.sample
+        if selected_scene_names is None
+        or scene_by_token[sample["scene_token"]]["name"] in selected_scene_names
+    ]
 
     missing_channels: Counter[str] = Counter()
     non_keyframe_links: Counter[str] = Counter()
@@ -48,7 +60,7 @@ def main() -> None:
     total_samples_by_scene: Counter[str] = Counter()
     missing_examples: list[str] = []
 
-    for sample in nusc.sample:
+    for sample in selected_samples:
         total_samples_by_scene[sample["scene_token"]] += 1
         sample_complete = True
         for channel in required_channels:
@@ -82,10 +94,14 @@ def main() -> None:
         "v1.0-trainval": {"scenes": 850, "samples": 34149},
         "v1.0-mini": {"scenes": 10, "samples": 404},
     }.get(args.version)
+    if args.version == "v1.0-trainval" and args.split == "val":
+        expected_counts = {"scenes": 150, "samples": 6019}
+    if args.version == "v1.0-trainval" and args.split == "train":
+        expected_counts = {"scenes": 700, "samples": 28130}
     observed_counts = {
-        "scenes": len(nusc.scene),
-        "samples": len(nusc.sample),
-        "annotations": len(nusc.sample_annotation),
+        "scenes": len({sample["scene_token"] for sample in selected_samples}),
+        "samples": len(selected_samples),
+        "annotations": sum(len(sample["anns"]) for sample in selected_samples),
     }
     count_checks = {
         key: observed_counts[key] == expected
@@ -123,8 +139,10 @@ def main() -> None:
         "count_checks": count_checks,
         "keyframe_coverage": {
             "complete_samples": complete_sample_count,
-            "missing_samples": len(nusc.sample) - complete_sample_count,
-            "complete_sample_pct": round(complete_sample_count / len(nusc.sample) * 100, 3),
+            "missing_samples": len(selected_samples) - complete_sample_count,
+            "complete_sample_pct": round(
+                complete_sample_count / len(selected_samples) * 100, 3
+            ),
             "available_scenes": available_scene_count,
             "complete_scenes": complete_scene_count,
             "partial_scenes": partial_scene_count,

@@ -1,43 +1,19 @@
-# 인지 DDI Keyframe 모델 검증
+# 인지 DDI 공식 validation 검증
 
-현재 보유한 nuScenes trainval01 keyframe shard에서 연구 절차에 따라 FCOS3D와 PGD를 실행했다.
+현재 기준 보고서는 [nuScenes 인지 DDI v1 150-scene 검증 보고서](results/val150/인지_DDI_150scene_검증_보고서.md)다.
 
 ## 범위
 
-- 완전 keyframe: 3,376개, 85개 장면
-- 경계 개발: 공식 train 2,462개 keyframe, 62개 장면
-- 최종 모델 검증: 공식 validation 914개 keyframe, 23개 장면
-- 모델별 입력: 5,484개 카메라 관측
-- 모델: FCOS3D, PGD
-- 주 분석: confidence 0.05, 동일 클래스 중심거리 2m 매칭
-- 민감도 분석: 중심거리 1m/4m, confidence 0.10/0.20
+- 공식 nuScenes validation: 150 scenes, 6,019 keyframes
+- Camera models: FCOS3D, PGD
+- LiDAR models: PointPillars, CenterPoint
+- Camera 파일 36,114개, LiDAR 10-frame 요구 파일 57,916개, 누락 0개
+- 모델별 예측 token 6,019개, 누락·예상 밖 token 0개
 
-## 결론
+## 결과
 
-현재 `presentation_legacy_v0` 합성 DDI는 사전 정의된 타당성 기준을 충족하지 못했다.
+네 모델 모두 Easy, Moderate, Hard 순서로 원시 frame FN rate가 증가했고 20개 민감도 조건에서도 방향이 유지됐다. 하지만 조정된 연속 DDI 효과가 모든 모델에서 유의한 양의 효과가 아니었고, 객체 단위 효과는 역방향이었다.
 
-- FCOS3D frame FN rate: Easy 0.228, Moderate 0.195, Hard 0.164
-- PGD frame FN rate: Easy 0.292, Moderate 0.289, Hard 0.241
-- 두 모델 모두 기대한 `Easy < Moderate < Hard` 오류 증가가 나타나지 않았다.
-- 10개 주·민감도 조건 중 엄격한 단조 증가를 충족한 조건은 0개였다.
-- 평균 가시성 난이도는 두 모델에서 일관된 양의 관계를 보였다.
-- 객체 수는 거의 무관했고, 현재 truncation proxy는 역방향이었다.
-- 통합 점수의 객체 FN AUC는 FCOS3D 0.487, PGD 0.492로 거리 단독 기준선 0.704, 0.714보다 낮았다.
+따라서 현재 DDI v1 합성 지표의 사전등록 판정은 **지지 실패**다. 가림과 LiDAR 5-point 희소성은 후보 component로 유지하지만 밀집도 가중치, 동일 가중 합성, frame 집계는 재설계가 필요하다.
 
-따라서 개별 인지 변수 전체가 무효라는 뜻은 아니다. 유효한 평균 가시성 신호와 포화된 maximum 항, 역방향 truncation 항을 같은 비중으로 평균한 현재 합성 방식이 지지되지 않았다는 뜻이다.
-
-두 모델이 모두 monocular 계열이므로 이번 결과는 camera-aligned 지표의 모델 반복 검증이다. LiDAR 희소성을 포함한 통합 인지 DDI를 확정하려면 single-keyframe LiDAR 또는 fusion 모델을 추가해야 한다.
-
-## 파일
-
-- [전체 한국어 검증 보고서](results/perception-model-validation/인지_DDI_모델_검증_보고서.md)
-- [재현 절차](docs/keyframe_perception_validation_protocol.md)
-- [주 결론 CSV](results/perception-model-validation/primary_conclusion.csv)
-- [지표별 타당성 CSV](results/perception-model-validation/component_validity.csv)
-- [난이도 구간 결과 CSV](results/perception-model-validation/difficulty_group_results.csv)
-- [검증 그림](results/perception-model-validation/figures/difficulty_vs_false_negative_rate.png)
-- [Google Drive 원본·보고서 압축 파일](https://drive.google.com/drive/folders/14eq8PtT756JZLJW_scNZFIyXGFQL5dKs)
-
-Drive 원본 ZIP SHA-256: `7D5B6188E984CDA2A4016C4D1A4B8F258A6D32678D48ED3B3B42CF4EAB16665A`
-
-Drive 보고서 ZIP SHA-256: `46B6C9198DB3A6314556A0071AF3CC287AFE440A5362251C8044DD0A07E38C2D`
+이전에 기록한 trainval01의 23-scene·914-keyframe 결과는 pilot이다. 본 문서와 `results/val150` 결과가 공식 전체 validation 본실험을 대체한다.

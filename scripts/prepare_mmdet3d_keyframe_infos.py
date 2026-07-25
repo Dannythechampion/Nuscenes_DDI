@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gc
 from pathlib import Path
 
 import mmengine
@@ -17,6 +18,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tokens", type=Path, required=True)
     parser.add_argument("--all-samples-csv", type=Path, required=True)
     parser.add_argument("--prefix", default="nuscenes_keyframes")
+    parser.add_argument(
+        "--max-sweeps",
+        type=int,
+        default=0,
+        help="Historical LiDAR sweeps in generated infos (0 for camera keyframe models).",
+    )
     return parser.parse_args()
 
 
@@ -55,6 +62,11 @@ def main() -> None:
         nusc.sample = [
             sample for sample in nusc.sample if sample["token"] in complete_tokens
         ]
+        # NuScenes.get() indexes directly into each table. Rebuild the sample
+        # index after filtering so annotation/velocity lookups remain correct.
+        nusc._token2ind["sample"] = {
+            sample["token"]: index for index, sample in enumerate(nusc.sample)
+        }
         scene_names = {scene["token"]: scene["name"] for scene in nusc.scene}
         train_names = set(splits.train)
         val_names = set(splits.val)
@@ -66,7 +78,12 @@ def main() -> None:
             token for token in present_scenes if scene_names[token] in val_names
         }
         train_infos, val_infos = _fill_trainval_infos(
-            nusc, train_scenes, val_scenes, test=False, max_sweeps=0)
+            nusc,
+            train_scenes,
+            val_scenes,
+            test=False,
+            max_sweeps=args.max_sweeps,
+        )
         metadata = {"version": "v1.0-trainval"}
         mmengine.dump({"infos": train_infos, "metadata": metadata}, raw_train)
         mmengine.dump({"infos": val_infos, "metadata": metadata}, raw_val)
@@ -74,7 +91,10 @@ def main() -> None:
             f"raw_train={len(train_infos)} raw_val={len(val_infos)} "
             f"complete={len(complete_tokens)}"
         )
-    if not v2_train.exists():
+        del nusc, train_infos, val_infos
+        gc.collect()
+    raw_train_payload = mmengine.load(raw_train)
+    if not v2_train.exists() and raw_train_payload["infos"]:
         update_pkl_infos("nuscenes", out_dir=str(v2_dir), pkl_path=str(raw_train))
     if not v2_val.exists():
         update_pkl_infos("nuscenes", out_dir=str(v2_dir), pkl_path=str(raw_val))

@@ -1,0 +1,3 @@
+modality,groups_populated,primary_models_monotonic,sensitivity_runs_monotonic,adjusted_frame_effect_positive_significant_all,adjusted_object_effect_positive_significant_all,composite_stronger_than_components,preregistered_support
+camera,true,true,10/10,false,false,false,false
+lidar,true,true,10/10,false,false,true,false

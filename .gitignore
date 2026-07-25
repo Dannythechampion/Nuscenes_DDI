@@ -11,3 +11,6 @@ __pycache__/
 *.pth
 *.pt
 *.ckpt
+results/val150/perception-features/
+results/val150/matches/
+results/val150/predictions/
